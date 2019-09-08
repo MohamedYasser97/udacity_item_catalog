@@ -8,11 +8,11 @@ import httplib2
 
 from sqlalchemy import create_engine, asc, desc
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm.exc import NoResultFound
-from flask import Flask, render_template, request, redirect, jsonify, url_for, flash, make_response
+from flask import Flask, render_template, request, redirect, jsonify, url_for, flash
 from flask import session as login_session
 from oauth2client.client import flow_from_clientsecrets, FlowExchangeError
 
+import helpers
 from db_setup import Base, User, Category, Item
 
 app = Flask(__name__)
@@ -50,9 +50,7 @@ def login():
 
     else:  # Testing the 1-time auth code the user got from Google to login user
         if request.args.get('state') != login_session['state']:  # Request was forged
-            res = make_response(json.dumps('Unauthorized request source.'), 401)
-            res.headers['Content-Type'] = 'application/json'
-            return res
+            return helpers.build_response('Unauthorized request source.', 401)
 
         one_time_auth = request.data  # This one-time code will be exchanged for an access token from Google
 
@@ -62,9 +60,7 @@ def login():
             oauth_flow.redirect_uri = 'postmessage'
             creds = oauth_flow.step2_exchange(one_time_auth)
         except FlowExchangeError:
-            res = make_response(json.dumps('Token exchange error.'), 401)
-            res.headers['Content-Type'] = 'application/json'
-            return res
+            return helpers.build_response('Token exchange error.', 401)
 
         # Testing exchanged credentials
         access_token = creds.access_token
@@ -73,20 +69,14 @@ def login():
         result = json.loads(req.request(target_url, 'GET')[1])
 
         if result.get('error'):
-            res = make_response(json.dumps(result.get('error')), 500)
-            res.headers['Content-Type'] = 'application/json'
-            return res
+            return helpers.build_response(result.get('error'), 500)
 
         google_id = creds.id_token['sub']
         if result['user_id'] != google_id:
-            res = make_response(json.dumps('User and token IDs are not matching.'), 401)
-            res.headers['Content-Type'] = 'application/json'
-            return res
+            return helpers.build_response(result.get('User and token IDs are not matching.'), 401)
 
         if result['issued_to'] != CLIENT_ID:
-            res = make_response(json.dumps('Token\'s target client ID doesn\'t match this client.'), 401)
-            res.headers['Content-Type'] = 'application/json'
-            return res
+            return helpers.build_response(result.get('Token\'s target client ID doesn\'t match this client.'), 401)
 
         # If we got here then the OAuth process is successful
         valid_access_token = login_session.get('access_token')
@@ -94,9 +84,7 @@ def login():
 
         # Checking if user is already logged in
         if valid_access_token and google_id == valid_google_id:
-            res = make_response(json.dumps('User already logged in.'), 200)
-            res.headers['Content-Type'] = 'application/json'
-            return res
+            return helpers.build_response('User already logged in.', 200)
 
         login_session['access_token'] = creds.access_token
         login_session['gplus_id'] = google_id
@@ -111,9 +99,9 @@ def login():
         login_session['pic'] = user_data['picture']
 
         # Creating user if hasn't logged in before
-        user_id = get_uid(user_data['email'])
+        user_id = helpers.get_uid(user_data['email'])
         if not user_id:
-            user_id = create_user(login_session)
+            user_id = helpers.create_user(login_session)
 
         login_session['user_id'] = user_id
 
@@ -122,48 +110,22 @@ def login():
         return redirect((url_for('home')))
 
 
-# Helper function used while logging in
-def get_uid(email):
-    try:
-        user = session.query(User).filter_by(email=email).one()
-    except NoResultFound:
-        user = None
-
-    return user
-
-
-# Helper function used while logging in
-def create_user(session_data):
-    new_user = User(name=session_data['name'], email=session_data['email'], pic=session_data['pic'])
-    session.add(new_user)
-    session.commit()
-
-    user = session.query(User).filter_by(email=session_data['email']).one()
-
-    return user.id
-
-
 # Disconnects from google before logging out
 def google_disconnect():
     access_token = login_session.get('access_token')
 
     if not access_token:
-        res = make_response(json.dumps('User already logged out.'), 401)
-        res.headers['Content-Type'] = 'application/json'
-        return res
+        return helpers.build_response('User already logged out.', 401)
 
     target_url = ('https://accounts.google.com/o/oauth2/revoke?token=%s' % access_token)
     req = httplib2.Http()
     result = req.request(target_url, 'GET')[0]
 
     if result['status'] == '200':
-        res = make_response(json.dumps('User successfully logged out.'), 200)
-        res.headers['Content-Type'] = 'application/json'
-        return res
+        return helpers.build_response('User successfully logged out.', 200)
     else:
-        res = make_response(json.dumps('Failed to log out user.'), 400)
-        res.headers['Content-Type'] = 'application/json'
-        return res
+        return helpers.build_response('Failed to log out user.', 400)
+
 
 # Logs out of website
 @app.route('/logout', methods=['POST'])

@@ -6,7 +6,7 @@ import string
 import requests
 import httplib2
 
-from sqlalchemy import create_engine, asc, desc
+from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
 from flask import Flask, render_template, request, redirect, jsonify, url_for, flash
 from flask import session as login_session
@@ -349,7 +349,7 @@ def delete_category(category_name):
 
         flash('Category successfully deleted!')
         return redirect(url_for('home'))
-    
+
 
 # Route for Creating item with specified category (empty category scenario)
 @app.route('/catalog/category/<category_name>/item/new', methods=['GET', 'POST'])
@@ -377,6 +377,25 @@ def create_item_precat(category_name):
         return redirect(url_for('home'))  # To be changed later
 
 
+# JSON equivalent of the home route
+@app.route('/.json')
+@app.route('/catalog.json')
+def home_json():
+    items = session.query(Item).order_by(desc('id')).all()
+    return jsonify(catalog=[item.serialize for item in items])
+
+
+# JSON equivalent of the show_category route
+@app.route('/catalog/category/<category_name>.json')
+def show_category_json(category_name):
+    if helpers.category_exists(category_name):
+        category = session.query(Category).filter_by(name=category_name).one()
+        items = session.query(Item).filter_by(category_id=helpers.get_category_id(category_name)).all()
+
+        return jsonify(category=category.serialize, items=[item.serialize for item in items])
+
+    else:
+        return jsonify('Category doesn\'t exist!')
 
 
 if __name__ == '__main__':

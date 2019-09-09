@@ -208,7 +208,7 @@ def create_item():
 @app.route('/catalog/category/<category_name>')
 def show_category(category_name):
     if helpers.category_exists(category_name):
-        items = session.query(Item).filter_by(category_id=helpers.get_category_id(category_name))
+        items = session.query(Item).filter_by(category_id=helpers.get_category_id(category_name)).all()
 
         owners = []
         for item in items:
@@ -232,6 +232,151 @@ def show_item(item_name):
     else:
         flash('This item doesn\'t exist!')
         return redirect(url_for('home'))
+
+# Route for showing a user's profile
+@app.route('/user/<int:user_id>')
+def show_user(user_id):
+    user = session.query(User).filter_by(id=user_id).one()
+    if user:
+        categories = session.query(Category).filter_by(user_id=user.id).all()
+        items = session.query(Item).filter_by(user_id=user.id).all()
+        return render_template('view_user.html', user=user, categories=categories, items=items)
+    else:
+        flash('This user doesn\'t exist!')
+        return redirect(url_for('home'))
+
+
+# Route for updating an item
+@app.route('/catalog/item/<item_name>/edit', methods=['GET', 'POST'])
+def edit_item(item_name):
+    # Checks if logged in
+    if 'name' not in login_session:
+        flash('You must be logged in to do that!')
+        return redirect(url_for('login'))
+
+    # Checks if item exists
+    if not helpers.item_exists(item_name):
+        flash('This item doesn\'t exist!')
+        return redirect(url_for('home'))
+
+    item = session.query(Item).filter_by(name=item_name).one()
+
+    # Checks user authority
+    if login_session['user_id'] != item.user_id:
+        flash('You are not authorized to do that!')
+        return redirect(url_for('home'))
+
+    if request.method == 'GET':
+        categories = session.query(Category).all()
+        return render_template('edit_item.html', item=item, categories=categories)
+    else:
+        if request.form['name']:
+            item.name = request.form['name']
+        if request.form['desc']:
+            item.description = request.form['desc']
+        if request.form['category']:
+            item.category_id = request.form['cat_id']
+
+        session.add(item)
+        session.commit()
+
+        flash('Item was successfully updated!')
+        return redirect(url_for('show_item',item_name=item.name))
+
+
+# Route for deleting an item
+@app.route('/catalog/item/<item_name>/delete', methods=['GET', 'POST'])
+def delete_item(item_name):
+    # Checks if logged in
+    if 'name' not in login_session:
+        flash('You must be logged in to do that!')
+        return redirect(url_for('login'))
+
+    # Checks if item exists
+    if not helpers.item_exists(item_name):
+        flash('This item doesn\'t exist!')
+        return redirect(url_for('home'))
+
+    item = session.query(Item).filter_by(name=item_name).one()
+
+    # Checks user authority
+    if login_session['user_id'] != item.user_id:
+        flash('You are not authorized to do that!')
+        return redirect(url_for('home'))
+
+    if request.method == 'GET':
+        return render_template('delete_item.html', item=item)
+    else:
+        session.delete(item)
+        session.commit()
+
+        flash('Item successfully deleted!')
+        return redirect(url_for('home'))
+
+
+# Route for deleting a category (can't delete a category unless it's empty)
+@app.route('/catalog/category/<category_name>/delete', methods=['GET', 'POST'])
+def delete_category(category_name):
+    # Checks if logged in
+    if 'name' not in login_session:
+        flash('You must be logged in to do that!')
+        return redirect(url_for('login'))
+
+    # Checks if category exists
+    if not helpers.category_exists(category_name):
+        flash('This category doesn\'t exist!')
+        return redirect(url_for('home'))
+
+    category = session.query(Category).filter_by(name=category_name).one()
+
+    # Checks user authority
+    if login_session['user_id'] != category.user_id:
+        flash('You are not authorized to do that!')
+        return redirect(url_for('home'))
+
+    # Checks if category is ready for deletion (empty)
+    items = session.query(Item).filter_by(category_id=category.id).all()
+    if items:
+        flash('You can\'t delete a category that has items!')
+        return redirect(url_for('home'))  # To be changed later
+
+    # Category is ready for deletion
+    if request.method == 'GET':
+        return render_template('delete_cat.html')
+    else:
+        session.delete(category)
+        session.commit()
+
+        flash('Category successfully deleted!')
+        return redirect(url_for('home'))
+    
+
+# Route for Creating item with specified category (empty category scenario)
+@app.route('/catalog/category/<category_name>/item/new', methods=['GET', 'POST'])
+def create_item_precat(category_name):
+    if 'name' not in login_session:
+        flash('You must be logged in to do that!')
+        return redirect(url_for('login'))
+
+    if request.method == 'GET':
+        return render_template('new_item.html', predetermined_cat=helpers.get_category_id(category_name))
+    else:
+        if request.form['name'] == '' or request.form['desc'] == '':
+            flash('Invalid item name or description!')
+            return redirect(url_for('create_item_precat'))
+
+        if helpers.item_exists(request.form['name']):
+            flash('Item already exists!')
+            return redirect(url_for('home'))  # To be changed later
+
+        new_item = Item(name=request.form['name'], description=request.form['desc'], category_id=request.form['cat'], user_id=login_session['user_id'])
+        session.add(new_item)
+        session.commit()
+
+        flash('Item successfully created!')
+        return redirect(url_for('home'))  # To be changed later
+
+
 
 
 if __name__ == '__main__':

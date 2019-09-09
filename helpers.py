@@ -45,3 +45,27 @@ def build_response(message, status, content_type='application/json'):
     res = make_response(json.dumps(message), status)
     res.headers['Content-Type'] = content_type
     return res
+
+
+# Checks if a category exists
+def category_exists(cat_name):
+    category = session.query(Category).filter_by(name=cat_name).one()
+    if category:
+        return True
+
+    return False
+
+
+# Checks if an item exists
+def item_exists(item_name):
+    item = session.query(Item).filter_by(name=item_name).one()
+    if item:
+        return True
+
+    return False
+
+
+# Gets the id of a category given its name
+def get_category_id(name):
+    category = session.query(Category).filter_by(name=name).one()
+    return category.id

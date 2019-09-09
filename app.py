@@ -204,6 +204,36 @@ def create_item():
         return redirect(url_for('home'))  # To be changed later
 
 
+# Route for showing a category
+@app.route('/catalog/category/<category_name>')
+def show_category(category_name):
+    if helpers.category_exists(category_name):
+        items = session.query(Item).filter_by(category_id=helpers.get_category_id(category_name))
+
+        owners = []
+        for item in items:
+            item_owner = session.query(User).filter_by(id=item.user_id).one()
+            owners.append(item_owner)
+
+        return render_template('view_category.html', cat_name=category_name, items=items, owners=owners)
+
+    else:
+        flash('This category doesn\'t exist!')
+        return redirect(url_for('home'))
+
+
+# Route for showing an item
+@app.route('/catalog/item/<item_name>')
+def show_item(item_name):
+    if helpers.item_exists(item_name):
+        item = session.query(Item).filter_by(name=item_name).one()
+        owner = session.query(User).filter_by(id=item.user_id).one()
+        return render_template('view_item.html',item=item, owner=owner)
+    else:
+        flash('This item doesn\'t exist!')
+        return redirect(url_for('home'))
+
+
 if __name__ == '__main__':
     app.secret_key = 'Life only makes sense if you force it to.'
     app.debug = True

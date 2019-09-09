@@ -150,6 +150,60 @@ def logout():
         return redirect(url_for('home'))
 
 
+# Route for creating categories
+@app.route('/catalog/category/new', methods=['GET', 'POST'])
+def create_category():
+    if 'name' not in login_session:
+        flash('You must be logged in to do that!')
+        return redirect(url_for('login'))
+    elif request.method == 'GET':
+        return render_template('new_cat.html')
+    else:
+        if request.form['cat_name'] == '':
+            flash('Invalid category name!')
+            return redirect(url_for('create_category'))
+
+    # A valid category name was inserted but need to check if already exists
+    category = session.query(Category).filter_by(name=request.form['cat_name']).one()
+    if category:
+        flash('This category already exists!')
+        return redirect(url_for('home'))  # Later to be changed to said category
+
+    # Creating new category
+    new_cat = Category(name=request.form['name'], user_id=login_session['user_id'])
+    session.add(new_cat)
+    session.commit()
+
+    flash('Category successfully created!')
+    return redirect(url_for('home'))  # To be changed later
+
+
+# Route for creating items
+@app.route('/catalog/item/new', methods=['GET', 'POST'])
+def create_item():
+    if 'name' not in login_session:
+        flash('You must be logged in to do that!')
+        return redirect(url_for('login'))
+    elif request.method == 'GET':
+        return render_template('new_item.html')
+    else:
+        if request.form['name'] == '' or request.form['desc'] == '':
+            flash('Invalid item name or description!')
+            return redirect(url_for('create_item'))
+
+        # Check if item already exists
+        item = session.query(Item).filter_by(name=request.form['name']).one()
+        if item:
+            flash('Item already exists!')
+            return redirect(url_for('home')) # To be changed later
+
+        new_item = Item(name=request.form['name'], category_id=request.form['cat'], description=request.form['desc'], user_id=login_session['user_id'])
+        session.add(new_item)
+        session.commit()
+        flash('Item successfully created!')
+        return redirect(url_for('home'))  # To be changed later
+
+
 if __name__ == '__main__':
     app.secret_key = 'Life only makes sense if you force it to.'
     app.debug = True

@@ -2,7 +2,7 @@
 
 import json
 
-from sqlalchemy import create_engine, asc, desc
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from flask import make_response
@@ -10,7 +10,8 @@ from flask import make_response
 from db_setup import Base, User, Category, Item
 
 # Connecting to the existing database
-engine = create_engine('sqlite:///item_catalog.db', pool_pre_ping=True, connect_args={'check_same_thread': False})
+engine = create_engine('sqlite:///item_catalog.db', pool_pre_ping=True,
+                       connect_args={'check_same_thread': False})
 Base.metadata.bind = engine
 
 
@@ -31,7 +32,8 @@ def get_uid(email):
 
 # Creates a user instance in the database and returns their id
 def create_user(session_data):
-    new_user = User(name=session_data['name'], email=session_data['email'], pic=session_data['pic'])
+    new_user = User(name=session_data['name'], email=session_data['email'],
+                    pic=session_data['pic'])
     session.add(new_user)
     session.commit()
 

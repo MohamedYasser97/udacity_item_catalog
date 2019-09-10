@@ -60,5 +60,6 @@ class Item(Base):  # Defining item entity
         }
 
 
-engine = create_engine('sqlite:///item_catalog.db', pool_pre_ping=True, connect_args={'check_same_thread': False})
+engine = create_engine('sqlite:///item_catalog.db', pool_pre_ping=True,
+                       connect_args={'check_same_thread': False})
 Base.metadata.create_all(engine)

@@ -24,9 +24,13 @@
                 <textarea type="text" class="form-control" name="desc" required rows="5"></textarea>
                 <label>Category</label>
                 <select class="form-control" name="cat">
-                    {% for category in categories %}
-                        <option value="{{ category.id }}">{{ category.name }}</option>
-                    {% endfor %}
+                    {% if predetermined_cat %}
+                        <option value="{{ predetermined_cat.id }}">{{ predetermined_cat.name }}</option>
+                    {% else %}
+                        {% for category in categories %}
+                            <option value="{{ category.id }}">{{ category.name }}</option>
+                        {% endfor %}
+                    {% endif %}
                 </select>
                 <button class="btn btn-primary" type="submit" style="padding-top:10px;">Create</button>
             </form>

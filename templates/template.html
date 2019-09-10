@@ -41,10 +41,10 @@
               <a class="nav-link dropdown-toggle navbar-brand" href="#" data-toggle="dropdown">
                   <img src="{{ session['pic'] }}" class="rounded-circle" style="width:30px;height:30px;">
               </a>
-              <div class="dropdown-menu dropdown-menu-right">
-                  <p class="dropdown-item"><a href="{{ url_for('show_user', user_id=session['user_id']) }}">Logged in as {{ session['name'] }}</a></p>
+              <div class="dropdown-menu dropdown-menu-right text-center">
+                  <a class="dropdown-item" href="{{ url_for('show_user', user_id=session['user_id']) }}">Logged in as {{ session['name'] }}</a>
                   <hr>
-                  <p class="dropdown-item"><a href="{{ url_for('logout') }}">Log out</a></p>
+                  <a class="dropdown-item" href="{{ url_for('logout') }}">Log out</a>
               </div>
           </li>
           {% else %}

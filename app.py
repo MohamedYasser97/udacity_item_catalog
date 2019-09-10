@@ -274,7 +274,7 @@ def show_item(item_name):
 # Route for showing a user's profile
 @app.route('/user/<int:user_id>')
 def show_user(user_id):
-    user = session.query(User).filter_by(id=user_id).one()
+    user = session.query(User).filter_by(id=user_id).first()
     if user:
         categories = session.query(Category).filter_by(user_id=user.id).all()
         items = session.query(Item).filter_by(user_id=user.id).all()
@@ -453,5 +453,5 @@ def show_category_json(category_name):
 
 if __name__ == '__main__':
     app.secret_key = 'Life only makes sense if you force it to.'
-    app.debug = True
+    app.debug = False
     app.run(host='0.0.0.0', port=8000)

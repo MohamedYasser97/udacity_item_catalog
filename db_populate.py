@@ -130,7 +130,7 @@ item9 = Item(name='art of war', description='The Art of War is an ancient '
 session.add(item9)
 session.commit()
 
-item10 = Item(name='boxing gloves', description='They\re used to play boxing',
+item10 = Item(name='boxing gloves', description='They\'re used to play boxing',
               user=user2, category=category1)
 session.add(item10)
 session.commit()

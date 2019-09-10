@@ -1,0 +1,20 @@
+.navbar{
+	background-color:#f2f2f2;
+	border-bottom: 2px solid red;
+}
+
+.navbar-brand{
+  	font-size:1.7em;
+  	letter-spacing: -1px;
+  	color: white;
+  	font-weight: bold;
+}
+
+#navoptions a:hover, #login a:hover{
+  	color: red !important;
+  	text-decoration: none;
+}
+
+.nav-item{
+	font-size:1.4em;
+}

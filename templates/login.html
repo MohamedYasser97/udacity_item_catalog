@@ -1,0 +1,60 @@
+{% extends 'template.html' %}
+{% block title %} Log in {% endblock %}
+{% block head %}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://apis.google.com/js/client:platform.js?onload=start" async defer></script>
+<script>
+  function start(){
+    gapi.load('auth2', function(){
+      auth2 = gapi.auth2.init({client_id: '297702278248-bnhgadptht0stlr4n027v94qh57dphnm.apps.googleusercontent.com'});
+    });
+  }
+</script>
+{% endblock %}
+
+{% block content %}
+
+<div class="container" style="padding-top:20px;">
+    <div class="row" style="padding-bottom:20px;">
+        <div class="col-md-12">
+            <h1>Login Options</h1>
+        </div>
+
+    </div>
+
+    <div class="row">
+        <div class="col-md-12 text-center" style="padding-top:20px;">
+            <button id="login" class="btn btn-primary">Google Log in</button>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+  $('#login').click(function(){
+    function loginCallback(result){
+      if (result['code']){
+        $('#login').attr('style', 'display: none');
+        $.ajax({
+          type: 'POST',
+          url: '/login?state={{ state }}',
+          headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+          },
+          contentType: 'application/octet-stream; charset=utf-8',
+          success:function(){
+                window.location.href = "/";
+          },
+          processData:false,
+          data:result['code']
+        });
+      } else{
+        console.log(result['error']);
+      }
+    }
+    auth2.grantOfflineAccess().then(loginCallback);
+  });
+</script>
+
+{% endblock %}

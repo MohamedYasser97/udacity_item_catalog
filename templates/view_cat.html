@@ -1,0 +1,47 @@
+{% extends 'template.html' %}
+{% block title %} {{ cat_name }} {% endblock %}
+
+{% block content %}
+
+<main role="main">
+
+      <section class="jumbotron text-center">
+        <div class="container">
+          <h1 class="jumbotron-heading" style="text-align:center;">{{ cat_name }}</h1>
+        </div>
+      </section>
+
+      <div class="album py-5 bg-light">
+        <div class="container">
+          <div class="row">
+            {% if items%}
+              {% for i in range(0, len) %}
+                <div class="col-sm-4">
+	              <div class="card mb-4 box-shadow">
+	                <div class="card-body">
+	                	<h2 style="text-align:center;padding-top:10px;">{{ items[i].name }}</h2>
+	                	<hr>
+                        <p class="card-text" style="text-align:center;">Created by: <a href="{{ url_for('show_user', user_id=owners[i].id) }}">{{ owners[i].name }}</a></p>
+                        <div style="text-align:center;">
+                            <a class="btn btn-danger" href="{{ url_for('show_item', item_name=items[i].name) }}" role="button">View </a>
+                        </div>
+	                </div>
+                  </div>
+                </div>
+              {% endfor %}
+          {% else %}
+
+                <div class="col-md-12 text-center" style="padding-top:20px;">
+                    <form action="{{ url_for('create_item_precat', category_name=cat_name) }}" method="GET">
+                        <button type="submit" class="btn btn-primary">Add Item</button>
+                    </form>
+                </div>
+
+          {% endif %}
+	      </div>
+	    </div>
+      </div>
+
+</main>
+
+{% endblock %}

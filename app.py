@@ -21,7 +21,7 @@ app = Flask(__name__)
 CLIENT_ID = json.loads(open('client_secret.json', 'r').read())['web']['client_id']
 
 # Connecting to the existing database
-engine = create_engine('sqlite:///item_catalog.db')
+engine = create_engine('sqlite:///item_catalog.db', pool_pre_ping=True, connect_args={'check_same_thread': False})
 Base.metadata.bind = engine
 
 # Creating session for future queries (NOT THE SAME AS login_session!)
@@ -68,7 +68,7 @@ def login():
         req = httplib2.Http()
         result = json.loads(req.request(target_url, 'GET')[1])
 
-        if result.get('error'):
+        if result.get('error') is not None:
             return helpers.build_response(result.get('error'), 500)
 
         google_id = creds.id_token['sub']
@@ -105,7 +105,7 @@ def login():
 
         login_session['user_id'] = user_id
 
-        flash('Welcome back, %s!' % login_session['username'])
+        flash('Welcome back, %s!' % login_session['name'])
 
         return redirect((url_for('home')))
 
@@ -128,7 +128,7 @@ def google_disconnect():
 
 
 # Logs out of website
-@app.route('/logout', methods=['POST'])
+@app.route('/logout')
 def logout():
     if 'name' in login_session:
         google_disconnect()
@@ -164,13 +164,13 @@ def create_category():
             return redirect(url_for('create_category'))
 
     # A valid category name was inserted but need to check if already exists
-    category = session.query(Category).filter_by(name=request.form['cat_name']).one()
+    category = session.query(Category).filter_by(name=request.form['cat_name'].lower()).first()
     if category:
         flash('This category already exists!')
         return redirect(url_for('home'))  # Later to be changed to said category
 
     # Creating new category
-    new_cat = Category(name=request.form['name'], user_id=login_session['user_id'])
+    new_cat = Category(name=request.form['cat_name'].lower(), user_id=login_session['user_id'])
     session.add(new_cat)
     session.commit()
 
@@ -185,19 +185,21 @@ def create_item():
         flash('You must be logged in to do that!')
         return redirect(url_for('login'))
     elif request.method == 'GET':
-        return render_template('new_item.html')
+        categories = session.query(Category).all()
+        return render_template('new_item.html', categories=categories)
     else:
-        if request.form['name'] == '' or request.form['desc'] == '':
+        if request.form['name'] == '' or request.form['desc'] == '' or request.form['cat'] == '':
             flash('Invalid item name or description!')
             return redirect(url_for('create_item'))
 
         # Check if item already exists
-        item = session.query(Item).filter_by(name=request.form['name']).one()
+        item = session.query(Item).filter_by(name=request.form['name'].lower()).first()
         if item:
             flash('Item already exists!')
-            return redirect(url_for('home')) # To be changed later
+            return redirect(url_for('home'))  # To be changed later
 
-        new_item = Item(name=request.form['name'], category_id=request.form['cat'], description=request.form['desc'], user_id=login_session['user_id'])
+        new_item = Item(name=request.form['name'].lower(), category_id=request.form['cat'], description=request.form['desc'],
+                        user_id=login_session['user_id'])
         session.add(new_item)
         session.commit()
         flash('Item successfully created!')
@@ -212,10 +214,10 @@ def show_category(category_name):
 
         owners = []
         for item in items:
-            item_owner = session.query(User).filter_by(id=item.user_id).one()
+            item_owner = session.query(User).filter_by(id=item.user_id).first()
             owners.append(item_owner)
 
-        return render_template('view_category.html', cat_name=category_name, items=items, owners=owners)
+        return render_template('view_cat.html', cat_name=category_name, items=items, owners=owners, len=len(items))
 
     else:
         flash('This category doesn\'t exist!')
@@ -226,12 +228,14 @@ def show_category(category_name):
 @app.route('/catalog/item/<item_name>')
 def show_item(item_name):
     if helpers.item_exists(item_name):
-        item = session.query(Item).filter_by(name=item_name).one()
-        owner = session.query(User).filter_by(id=item.user_id).one()
-        return render_template('view_item.html',item=item, owner=owner)
+        item = session.query(Item).filter_by(name=item_name).first()
+        owner = session.query(User).filter_by(id=item.user_id).first()
+        category = session.query(Category).filter_by(id=item.category_id).first()
+        return render_template('view_item.html', item=item, owner=owner, category=category)
     else:
         flash('This item doesn\'t exist!')
         return redirect(url_for('home'))
+
 
 # Route for showing a user's profile
 @app.route('/user/<int:user_id>')
@@ -259,7 +263,7 @@ def edit_item(item_name):
         flash('This item doesn\'t exist!')
         return redirect(url_for('home'))
 
-    item = session.query(Item).filter_by(name=item_name).one()
+    item = session.query(Item).filter_by(name=item_name).first()
 
     # Checks user authority
     if login_session['user_id'] != item.user_id:
@@ -271,17 +275,17 @@ def edit_item(item_name):
         return render_template('edit_item.html', item=item, categories=categories)
     else:
         if request.form['name']:
-            item.name = request.form['name']
+            item.name = request.form['name'].lower()
         if request.form['desc']:
             item.description = request.form['desc']
-        if request.form['category']:
+        if request.form['cat_id']:
             item.category_id = request.form['cat_id']
 
         session.add(item)
         session.commit()
 
         flash('Item was successfully updated!')
-        return redirect(url_for('show_item',item_name=item.name))
+        return redirect(url_for('show_item', item_name=item.name))
 
 
 # Route for deleting an item
@@ -297,7 +301,7 @@ def delete_item(item_name):
         flash('This item doesn\'t exist!')
         return redirect(url_for('home'))
 
-    item = session.query(Item).filter_by(name=item_name).one()
+    item = session.query(Item).filter_by(name=item_name).first()
 
     # Checks user authority
     if login_session['user_id'] != item.user_id:
@@ -327,7 +331,7 @@ def delete_category(category_name):
         flash('This category doesn\'t exist!')
         return redirect(url_for('home'))
 
-    category = session.query(Category).filter_by(name=category_name).one()
+    category = session.query(Category).filter_by(name=category_name).first()
 
     # Checks user authority
     if login_session['user_id'] != category.user_id:
@@ -342,7 +346,7 @@ def delete_category(category_name):
 
     # Category is ready for deletion
     if request.method == 'GET':
-        return render_template('delete_cat.html')
+        return render_template('delete_cat.html', category=category)
     else:
         session.delete(category)
         session.commit()
@@ -365,11 +369,12 @@ def create_item_precat(category_name):
             flash('Invalid item name or description!')
             return redirect(url_for('create_item_precat'))
 
-        if helpers.item_exists(request.form['name']):
+        if helpers.item_exists(request.form['name'].lower()):
             flash('Item already exists!')
             return redirect(url_for('home'))  # To be changed later
 
-        new_item = Item(name=request.form['name'], description=request.form['desc'], category_id=request.form['cat'], user_id=login_session['user_id'])
+        new_item = Item(name=request.form['name'].lower(), description=request.form['desc'], category_id=request.form['cat'],
+                        user_id=login_session['user_id'])
         session.add(new_item)
         session.commit()
 
@@ -389,7 +394,7 @@ def home_json():
 @app.route('/catalog/category/<category_name>.json')
 def show_category_json(category_name):
     if helpers.category_exists(category_name):
-        category = session.query(Category).filter_by(name=category_name).one()
+        category = session.query(Category).filter_by(name=category_name).first()
         items = session.query(Item).filter_by(category_id=helpers.get_category_id(category_name)).all()
 
         return jsonify(category=category.serialize, items=[item.serialize for item in items])

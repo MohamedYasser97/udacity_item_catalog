@@ -1,0 +1,36 @@
+{% extends 'template.html' %}
+{% block title %} {{ user.name }} {% endblock %}
+
+{% block content %}
+
+<div class="container text-center" style="padding-top:20px;">
+    <div class="row" style="padding-bottom:20px;">
+        <div class="col-md-12">
+            <h1>{{ user.name }}</h1>
+            <img src="{{ user.pic }}" class="rounded-circle" style="width:300px;height:300px;">
+        </div>
+
+    </div>
+
+    <div class="row">
+        <div class="col-md-4" style="padding-top:20px;border-top:1px solid red">
+            <h2>Categories</h2>
+            {% for category in categories %}
+                <a href="{{ url_for('show_category', category_name=category.name) }}"><p>{{ category.name }}</p></a>
+            {% endfor %}
+        </div>
+
+        <div class="offset-md-1"></div>
+
+        <div class="col-md-7" style="padding-top:20px;border-top:1px solid red">
+            <h2>Items</h2>
+            {% for item in items %}
+                <a href="{{ url_for('show_item', item_name=item.name) }}"><p>{{ item.name }}</p></a>
+            {% endfor %}
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

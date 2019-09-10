@@ -1,0 +1,33 @@
+{% extends 'template.html' %}
+{% block title %} New Category {% endblock %}
+{% block head %}
+{% endblock %}
+
+{% block content %}
+
+<div class="container" style="padding-top:20px;">
+    <div class="row" style="padding-bottom:20px;">
+        <div class="col-md-12">
+            <h1>Create a new category</h1>
+        </div>
+
+    </div>
+
+    <div class="row">
+        <div class="offset-md-4"></div>
+
+        <div class="col-md-4 text-center" style="padding-top:20px;">
+            <form action="{{ url_for('create_category') }}" method="POST">
+                <label>Category name</label>
+                <input name="cat_name" type="text" class="form-control">
+                <button class="btn btn-primary" type="submit" style="padding-top:10px;">Create</button>
+            </form>
+        </div>
+
+        <div class="offset-md-4"></div>
+
+    </div>
+
+</div>
+
+{% endblock %}

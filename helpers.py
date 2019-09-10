@@ -10,7 +10,7 @@ from flask import make_response
 from db_setup import Base, User, Category, Item
 
 # Connecting to the existing database
-engine = create_engine('sqlite:///item_catalog.db')
+engine = create_engine('sqlite:///item_catalog.db', pool_pre_ping=True, connect_args={'check_same_thread': False})
 Base.metadata.bind = engine
 
 
@@ -24,9 +24,9 @@ def get_uid(email):
     try:
         user = session.query(User).filter_by(email=email).one()
     except NoResultFound:
-        user = None
+        return None
 
-    return user
+    return user.id
 
 
 # Creates a user instance in the database and returns their id
@@ -35,7 +35,7 @@ def create_user(session_data):
     session.add(new_user)
     session.commit()
 
-    user = session.query(User).filter_by(email=session_data['email']).one()
+    user = session.query(User).filter_by(email=session_data['email']).first()
 
     return user.id
 
@@ -49,7 +49,7 @@ def build_response(message, status, content_type='application/json'):
 
 # Checks if a category exists
 def category_exists(cat_name):
-    category = session.query(Category).filter_by(name=cat_name).one()
+    category = session.query(Category).filter_by(name=cat_name).first()
     if category:
         return True
 
@@ -58,7 +58,7 @@ def category_exists(cat_name):
 
 # Checks if an item exists
 def item_exists(item_name):
-    item = session.query(Item).filter_by(name=item_name).one()
+    item = session.query(Item).filter_by(name=item_name).first()
     if item:
         return True
 
@@ -67,5 +67,5 @@ def item_exists(item_name):
 
 # Gets the id of a category given its name
 def get_category_id(name):
-    category = session.query(Category).filter_by(name=name).one()
+    category = session.query(Category).filter_by(name=name).first()
     return category.id

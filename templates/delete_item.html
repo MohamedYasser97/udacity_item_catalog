@@ -1,0 +1,17 @@
+{% extends 'template.html' %}
+{% block title %} Delete Item {% endblock %}
+{% block content %}
+
+<div class="container text-center" style="padding-top:20px;">
+    <div class="row">
+        <div class="col-md-12">
+            <form action="{{ url_for('delete_item', item_name=item.name) }}" method="POST">
+                <h1>Are you sure you want to delete "{{ item.name }}"?</h1>
+                <button class="btn btn-danger" type="submit" style="padding-top:10px;">Delete</button>
+            </form>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

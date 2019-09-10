@@ -1,0 +1,41 @@
+{% extends 'template.html' %}
+{% block title %} New Item {% endblock %}
+{% block head %}
+{% endblock %}
+
+{% block content %}
+
+<div class="container" style="padding-top:20px;">
+    <div class="row" style="padding-bottom:20px;">
+        <div class="col-md-12">
+            <h1>Create a new item</h1>
+        </div>
+
+    </div>
+
+    <div class="row">
+        <div class="offset-md-4"></div>
+
+        <div class="col-md-4 text-center" style="padding-top:20px;">
+            <form action="{{ url_for('create_item') }}" method="POST">
+                <label>Item name</label>
+                <input name="name" type="text" class="form-control">
+                <label>Item description</label>
+                <textarea type="text" class="form-control" name="desc" required rows="5"></textarea>
+                <label>Category</label>
+                <select class="form-control" name="cat">
+                    {% for category in categories %}
+                        <option value="{{ category.id }}">{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+                <button class="btn btn-primary" type="submit" style="padding-top:10px;">Create</button>
+            </form>
+        </div>
+
+        <div class="offset-md-4"></div>
+
+    </div>
+
+</div>
+
+{% endblock %}

@@ -6,10 +6,16 @@ A simple web app built with Flask that documents items and categories and handle
 The entry point of this project is `app.py`. This file contains all the code that handles the existing endpoints and the logic of each endpoint. `helpers.py` contains some helper methods that are used in `app.py`. All views are stored in the `./templates` directory and a few external CSS styles are in `./static/styles.css`. Both files `db_setup.py` and `db_populate.py` have to run before starting the server in order to set-up and populate the database.
 
 ## Execution
-In order to run this web app, please first set-up and populate the database by executing the following commands in order:
+First, make sure you have all the required packages installed. You can check those packages in the `requirements.txt` file.
+In order to install all of the required packages just execute this command inside the project's directory:
 
-  1) `python db_setup.py`
-  2) `python db_populate.py`
+`pip  install  -r  requirements.txt`
+
+Then in order to run this web app, please first set-up and populate the database by executing the following commands in order:
+
+`python db_setup.py`
+
+`python db_populate.py`
   
 Now, you can run the server by executing this command:
 
@@ -18,12 +24,20 @@ Now, you can run the server by executing this command:
 You can now use the app in your browser at `http://localhost:8000/`.
 
 ## JSON Endpoints
-This web app provides two types of JSON endpoints.
+This web app provides the following JSON endpoints.
 
-`http://localhost:8000/catalog.json` will return 2 JSON entities, one that has data on all categories and the other has data on all of the items.
+### `/catalog.json`
+This endpoint will return 2 JSON entities, one that has data of all categories and the other has data of all of the items.
 
-`http://localhost:8000/catalog/category/<category_name>.json` will return data on a specific category and all items that are related to this specific category.
+---
 
+### `/catalog/category/<category_name>.json`
+This endpoint will return data of a specific category and all items that are related to this specific category.
+
+---
+
+### `/catalog/item/<item_name>.json`
+This endpoint will return data of a single item along with its owner and parent category.
 
 ## FAQ
 

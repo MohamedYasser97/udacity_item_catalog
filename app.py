@@ -36,6 +36,9 @@ session = DBSession()
 @app.route('/')
 @app.route('/catalog')
 def home():
+    """Renders the homepage of the app by fetching all categories and 10
+    most recent items."""
+
     categories = session.query(Category).all()
     items = session.query(Item).order_by(desc('id')).limit(
         10).all()  # Only get the latest 10 results
@@ -46,6 +49,13 @@ def home():
 # Both login routes
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    """Handles the whole login process.
+
+    The GET endpoint displays a page with the google sign in button. The
+    POST endpoint exchanges the client-fetched token with client's
+    credentials.
+    """
+
     if request.method == 'GET':
         # Generate unique session token and rendering login prompt
         state_token = ''.join(
@@ -133,6 +143,8 @@ def login():
 
 # Disconnects from google before logging out
 def google_disconnect():
+    """Helper function that disconnects from google before logging out."""
+
     access_token = login_session.get('access_token')
 
     if not access_token:
@@ -153,6 +165,8 @@ def google_disconnect():
 # Logs out of website
 @app.route('/logout')
 def logout():
+    """Deletes user info from the current session."""
+
     if 'name' in login_session:
         google_disconnect()
 
@@ -176,6 +190,12 @@ def logout():
 # Route for creating categories
 @app.route('/catalog/category/new', methods=['GET', 'POST'])
 def create_category():
+    """Creates a new category.
+
+    The GET endpoint displays a form to create the category.
+    The POST endpoint creates the category and shows it afterwards.
+    """
+
     if 'name' not in login_session:
         flash('You must be logged in to do that!')
         return redirect(url_for('login'))
@@ -206,6 +226,12 @@ def create_category():
 # Route for creating items
 @app.route('/catalog/item/new', methods=['GET', 'POST'])
 def create_item():
+    """Creates a new item.
+
+    The GET endpoint displays a form to create the item.
+    The POST endpoint creates the item and shows it afterwards.
+    """
+
     if 'name' not in login_session:
         flash('You must be logged in to do that!')
         return redirect(url_for('login'))
@@ -238,6 +264,8 @@ def create_item():
 # Route for showing a category
 @app.route('/catalog/category/<category_name>')
 def show_category(category_name):
+    """Shows a single category with all of its items and each item's owner."""
+
     if helpers.category_exists(category_name):
         category = session.query(Category).filter_by(
             name=category_name).first()
@@ -259,6 +287,8 @@ def show_category(category_name):
 # Route for showing an item
 @app.route('/catalog/item/<item_name>')
 def show_item(item_name):
+    """Shows a single item along with its description and owner."""
+
     if helpers.item_exists(item_name):
         item = session.query(Item).filter_by(name=item_name).first()
         owner = session.query(User).filter_by(id=item.user_id).first()
@@ -274,6 +304,9 @@ def show_item(item_name):
 # Route for showing a user's profile
 @app.route('/user/<int:user_id>')
 def show_user(user_id):
+    """Shows a user's profile with his name, picture and all owned items and
+    categories. """
+
     user = session.query(User).filter_by(id=user_id).first()
     if user:
         categories = session.query(Category).filter_by(user_id=user.id).all()
@@ -288,6 +321,12 @@ def show_user(user_id):
 # Route for updating an item
 @app.route('/catalog/item/<item_name>/edit', methods=['GET', 'POST'])
 def edit_item(item_name):
+    """Edits an existing item.
+
+    The GET endpoint displays the form to edit an item. The POST endpoint
+    submits the changes and redirects to the item after changes.
+    """
+
     # Checks if logged in
     if 'name' not in login_session:
         flash('You must be logged in to do that!')
@@ -327,6 +366,12 @@ def edit_item(item_name):
 # Route for deleting an item
 @app.route('/catalog/item/<item_name>/delete', methods=['GET', 'POST'])
 def delete_item(item_name):
+    """Deletes an existing item.
+
+    The GET endpoint displays a confirmation page before deletion.
+    The POST endpoint deletes the item from the database.
+    """
+
     # Checks if logged in
     if 'name' not in login_session:
         flash('You must be logged in to do that!')
@@ -357,6 +402,12 @@ def delete_item(item_name):
 # Route for deleting a category (can't delete a category unless it's empty)
 @app.route('/catalog/category/<category_name>/delete', methods=['GET', 'POST'])
 def delete_category(category_name):
+    """Deletes a category after checking it doesn't contain any items.
+
+    The GET endpoint displays a confirmation page before deletion.
+    The POST endpoint deletes the category from the database.
+    """
+
     # Checks if logged in
     if 'name' not in login_session:
         flash('You must be logged in to do that!')
@@ -395,6 +446,9 @@ def delete_category(category_name):
 @app.route('/catalog/category/<category_name>/item/new',
            methods=['GET', 'POST'])
 def create_item_precat(category_name):
+    """Creates an item with only one category option in the creation form.
+    This happens in case of creating an item inside an empty category. """
+
     if 'name' not in login_session:
         flash('You must be logged in to do that!')
         return redirect(url_for('login'))
@@ -429,6 +483,8 @@ def create_item_precat(category_name):
 @app.route('/.json')
 @app.route('/catalog.json')
 def home_json():
+    """Returns a JSON representation of all available categories and items."""
+
     items = session.query(Item).order_by(desc('id')).all()
     categories = session.query(Category).order_by(desc('id')).all()
     return jsonify(items=[item.serialize for item in items],
@@ -438,6 +494,9 @@ def home_json():
 # JSON equivalent of the show_category route
 @app.route('/catalog/category/<category_name>.json')
 def show_category_json(category_name):
+    """Returns a JSON representation of a single category with all of its
+    items. """
+
     if helpers.category_exists(category_name):
         category = session.query(Category).filter_by(
             name=category_name).first()
@@ -449,6 +508,25 @@ def show_category_json(category_name):
 
     else:
         return jsonify('Category doesn\'t exist!')
+
+
+# JSON endpoint that shows data of a single item
+@app.route('/catalog/item/<item_name>.json')
+def show_item_json(item_name):
+    """Returns a JSON representation of a single item along with its owner
+    and category. """
+
+    if helpers.item_exists(item_name):
+        item = session.query(Item).filter_by(name=item_name).first()
+        category = session.query(Category) \
+            .filter_by(id=item.category_id).first()
+        owner = session.query(User).filter_by(id=item.user_id).first()
+
+        return jsonify(item=item.serialize, parent_category=category.serialize,
+                       item_creator=owner.serialize)
+
+    else:
+        return jsonify('Item doesn\'t exist!')
 
 
 if __name__ == '__main__':

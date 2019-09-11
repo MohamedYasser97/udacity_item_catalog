@@ -8,6 +8,9 @@ Base = declarative_base()
 
 
 class User(Base):  # Defining the user entity
+    """Defines the User entity in the database with all its properties and
+    methods."""
+
     __tablename__ = 'user'
 
     id = Column(Integer, primary_key=True)
@@ -15,8 +18,21 @@ class User(Base):  # Defining the user entity
     name = Column(String(250), nullable=False)
     pic = Column(String(500))
 
+    # Preparing output for json endpoint
+    @property
+    def serialize(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'email': self.email,
+            'pic': self.pic
+        }
+
 
 class Category(Base):  # Defining category entity
+    """Defines the Category entity in the database with all its properties and
+    methods."""
+
     __tablename__ = 'category'
 
     id = Column(Integer, primary_key=True)
@@ -36,6 +52,9 @@ class Category(Base):  # Defining category entity
 
 
 class Item(Base):  # Defining item entity
+    """Defines the Item entity in the database with all its properties and
+    methods."""
+
     __tablename__ = 'item'
 
     id = Column(Integer, primary_key=True)
